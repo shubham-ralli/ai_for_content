@@ -187,6 +187,9 @@ class ContentAITrainer:
 
 def main_menu():
     trainer = ContentAITrainer()
+    url_content_storage = []  # List to store URL content in memory
+    url_dir = os.path.join(trainer.training_data_dir, 'url_content')
+    os.makedirs(url_dir, exist_ok=True)
     while True:
         print("\nContent AI Menu:")
         print("1. Add training text")
@@ -199,8 +202,8 @@ def main_menu():
         
         if choice == '1':
             text = input("Enter training text: ")
-            filepath = trainer.save_training_data(text, "text", {"type": "user_input"})
-            print(f"Text saved to {filepath}")
+            trainer.save_training_data(text, "text", {"type": "user_input"})
+            print("Text saved successfully.")
             
             if trainer.train_model(text):
                 print("Model trained successfully!")
@@ -214,9 +217,19 @@ def main_menu():
                 soup = BeautifulSoup(response.text, 'html.parser')
                 text = soup.get_text()
                 
-                filepath = trainer.save_training_data(text, "url", {"type": "url_content", "source": url})
-                print(f"URL content saved to {filepath}")
+                # Store URL content in memory
+                url_content_storage.append(text)
+                print("URL content added to memory.")
                 
+                # Create a new text file for the URL content
+                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"url_content_{timestamp}.txt"
+                filepath = os.path.join(url_dir, filename)
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(text)
+                print(f"URL content saved to {filepath}.")
+                
+                # Optionally, you can also train the model with this content if needed
                 if trainer.train_model(text):
                     print("Model trained successfully with URL content!")
                 else:
@@ -231,12 +244,12 @@ def main_menu():
                     with open(file_path, 'r', encoding='utf-8') as f:
                         content = f.read()
                     
-                    filepath = trainer.save_training_data(content, "file", {
+                    trainer.save_training_data(content, "file", {
                         "type": "file_content",
                         "source_file": file_path,
                         "file_type": file_path.split('.')[-1]
                     })
-                    print(f"File content saved to {filepath}")
+                    print("File content saved successfully.")
                     
                     if trainer.train_model(content):
                         print("Model trained successfully with file content!")
